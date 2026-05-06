@@ -9,7 +9,13 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
   const [formData, setFormData] = useState({
     visualDescription: '',
     threatLevel: '',
-    gangId: ''
+    gangId: '',
+    street: '',
+    neighborhood: '',
+    city: '',
+    state: '',
+    lat: 0,
+    lon: 0
   });
 
   useEffect(() => {
@@ -17,7 +23,13 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
       setFormData({
         visualDescription: graffiti.visualDescription,
         threatLevel: graffiti.threatLevel,
-        gangId: graffiti.gangId
+        gangId: graffiti.gangId,
+        street: graffiti.location?.street || '',
+        neighborhood: graffiti.location?.neighborhood || '',
+        city: graffiti.location?.city || '',
+        state: graffiti.location?.state || '',
+        lat: graffiti.location?.lat || 0,
+        lon: graffiti.location?.lon || 0
       });
       setIsEditing(false);
       loadGangs();
@@ -142,23 +154,103 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
                 </h3>
               </div>
 
+              {/* Rua */}
               <div className="col-span-2">
-                <p className="text-gray-900">
-                  {graffiti.location.street}, {graffiti.location.neighborhood}
-                </p>
-                <p className="text-gray-600 text-sm">
-                  {graffiti.location.city} - {graffiti.location.state}
-                </p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Rua</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={formData.street}
+                    onChange={(e) => setFormData({ ...formData, street: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ex: Rua das Flores, 123"
+                  />
+                ) : (
+                  <p className="text-gray-900">{graffiti.location.street}</p>
+                )}
               </div>
 
+              {/* Bairro */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={formData.neighborhood}
+                    onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ex: Centro"
+                  />
+                ) : (
+                  <p className="text-gray-900">{graffiti.location.neighborhood}</p>
+                )}
+              </div>
+
+              {/* Cidade */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ex: Florianópolis"
+                  />
+                ) : (
+                  <p className="text-gray-900">{graffiti.location.city}</p>
+                )}
+              </div>
+
+              {/* Estado */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={formData.state}
+                    onChange={(e) => setFormData({ ...formData, state: e.target.value.toUpperCase() })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ex: SC"
+                    maxLength={2}
+                  />
+                ) : (
+                  <p className="text-gray-900">{graffiti.location.state}</p>
+                )}
+              </div>
+
+              {/* Latitude */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Latitude</label>
-                <p className="text-gray-900">{graffiti.location.lat}</p>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    step="0.000001"
+                    value={formData.lat}
+                    onChange={(e) => setFormData({ ...formData, lat: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ex: -27.5954"
+                  />
+                ) : (
+                  <p className="text-gray-900">{graffiti.location.lat}</p>
+                )}
               </div>
 
+              {/* Longitude */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Longitude</label>
-                <p className="text-gray-900">{graffiti.location.lon}</p>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    step="0.000001"
+                    value={formData.lon}
+                    onChange={(e) => setFormData({ ...formData, lon: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ex: -48.5480"
+                  />
+                ) : (
+                  <p className="text-gray-900">{graffiti.location.lon}</p>
+                )}
               </div>
             </>
           )}

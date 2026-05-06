@@ -1,8 +1,9 @@
 import { NavLink } from 'react-router-dom';
-import { Users, Image } from 'lucide-react';
+import { LayoutDashboard, Users, Image } from 'lucide-react';
 
 export function Sidebar() {
   const links = [
+    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/faccoes', icon: Users, label: 'Facções' },
     { to: '/pichacoes', icon: Image, label: 'Pichações' }
   ];
