@@ -68,13 +68,21 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
     <Modal isOpen={isOpen} onClose={onClose} title="Detalhes da Pichação" size="md">
       {/* Conteúdo com rolagem */}
       <div className="flex flex-col gap-6">
-        {graffiti.imagePath && (
+        {graffiti.imagePath ? (
           <div className="w-full h-64 bg-gray-100 rounded-lg overflow-hidden shrink-0">
             <img
-              src={`http://localhost:5219${graffiti.imagePath}`}
+              src={graffiti.imagePath}
               alt="Pichação"
               className="w-full h-full object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                console.error('Erro ao carregar imagem do MinIO:', graffiti.imagePath);
+              }}
             />
+          </div>
+        ) : (
+          <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+            Sem imagem
           </div>
         )}
 
