@@ -227,9 +227,13 @@ export function GraffitisPage() {
             >
               {graffiti.imagePath ? (
                 <img
-                  src={`http://localhost:5219${graffiti.imagePath}`}
+                  src={graffiti.imagePath}
                   alt="Pichação"
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    console.error('Erro ao carregar imagem do MinIO:', graffiti.imagePath);
+                  }}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-400">
