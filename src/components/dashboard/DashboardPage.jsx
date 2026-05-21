@@ -78,7 +78,7 @@ export function DashboardPage() {
           <BarChart2 className="w-8 h-8 text-blue-600" />
           Dashboard Analítico
         </h1>
-        <p className="text-gray-600 mt-1">Visão geral e estatísticas do sistema de classificação</p>
+        <p className="text-gray-600 mt-1">Visão geral e estatísticas do sistema</p>
       </div>
 
       {/* Cards de Resumo */}
@@ -90,8 +90,8 @@ export function DashboardPage() {
               <p className="text-sm font-medium text-gray-600">Total de Pichações</p>
               <p className="text-3xl font-bold text-gray-900 mt-2">{summary?.totalGraffitis || 0}</p>
             </div>
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <TrendingUp className="w-8 h-8 text-blue-600" />
+            <div className="p-2 sm:p-2.5 md:p-3 bg-blue-100 rounded-lg shrink-0">
+              <TrendingUp className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-blue-600 shrink-0" />
             </div>
           </div>
         </div>
@@ -103,8 +103,8 @@ export function DashboardPage() {
               <p className="text-sm font-medium text-gray-600">Facções Mapeadas</p>
               <p className="text-3xl font-bold text-gray-900 mt-2">{summary?.totalGangs || 0}</p>
             </div>
-            <div className="p-3 bg-green-100 rounded-lg">
-              <Users className="w-8 h-8 text-green-600" />
+            <div className="p-2 sm:p-2.5 md:p-3 bg-green-100 rounded-lg shrink-0">
+              <Users className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-green-600 shrink-0" />
             </div>
           </div>
         </div>
@@ -121,8 +121,8 @@ export function DashboardPage() {
                 {summary?.predominantThreatLevel === 'N/A' && 'N/A'}
               </p>
             </div>
-            <div className="p-3 bg-red-100 rounded-lg">
-              <AlertTriangle className="w-8 h-8 text-red-600" />
+            <div className="p-2 sm:p-2.5 md:p-3 bg-red-100 rounded-lg shrink-0">
+              <AlertTriangle className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-red-600 shrink-0" />
             </div>
           </div>
         </div>
