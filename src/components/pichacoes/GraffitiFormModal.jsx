@@ -19,6 +19,48 @@ export function GraffitiFormModal({ isOpen, onClose, onSave }) {
   });
   const [preview, setPreview] = useState(null);
 
+  const COORDINATE_PATTERN = /^-?\d*(?:[.,]\d*)?$/;
+
+  const isCoordinateValueAllowed = (value, min, max) => {
+    if (value === '' || value === '-' || value === '.' || value === '-.' || value === ',') {
+      return true;
+    }
+
+    if (!COORDINATE_PATTERN.test(value)) {
+      return false;
+    }
+
+    const numericValue = Number(value.replace(',', '.'));
+    if (Number.isNaN(numericValue)) {
+      return false;
+    }
+
+    return numericValue >= min && numericValue <= max;
+  };
+
+  const handleCoordinateChange = (key, value, min, max) => {
+    if (isCoordinateValueAllowed(value, min, max)) {
+      setFormData((prev) => ({ ...prev, [key]: value }));
+    }
+  };
+
+  const parseCoordinateValue = (value, min, max) => {
+    if (value === '' || value === '-' || value === '.' || value === '-.' || value === ',') {
+      return null;
+    }
+
+    const numericValue = Number(value.replace(',', '.'));
+    if (Number.isNaN(numericValue)) {
+      return null;
+    }
+
+    if (numericValue < min || numericValue > max) {
+      return null;
+    }
+
+    return numericValue;
+  };
+
   useEffect(() => {
     if (isOpen) {
       loadGangs();
@@ -57,6 +99,12 @@ export function GraffitiFormModal({ isOpen, onClose, onSave }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const latValue = parseCoordinateValue(formData.lat, -90, 90);
+    const lonValue = parseCoordinateValue(formData.lon, -180, 180);
+    if (latValue === null || lonValue === null) {
+      return;
+    }
+
     const data = new FormData();
     data.append('visualDescription', formData.visualDescription);
     data.append('threatLevel', formData.threatLevel);
@@ -65,8 +113,8 @@ export function GraffitiFormModal({ isOpen, onClose, onSave }) {
     data.append('neighborhood', formData.neighborhood);
     data.append('city', formData.city);
     data.append('state', formData.state);
-    data.append('lat', formData.lat);
-    data.append('lon', formData.lon);
+    data.append('lat', String(latValue));
+    data.append('lon', String(lonValue));
     if (formData.image) {
       data.append('image', formData.image);
     }
@@ -182,11 +230,11 @@ export function GraffitiFormModal({ isOpen, onClose, onSave }) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Latitude *</label>
             <input
-              type="number"
-              step="any"
+              type="text"
+              inputMode="decimal"
               required
               value={formData.lat}
-              onChange={(e) => setFormData({ ...formData, lat: e.target.value })}
+              onChange={(e) => handleCoordinateChange('lat', e.target.value, -90, 90)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -194,11 +242,11 @@ export function GraffitiFormModal({ isOpen, onClose, onSave }) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Longitude *</label>
             <input
-              type="number"
-              step="any"
+              type="text"
+              inputMode="decimal"
               required
               value={formData.lon}
-              onChange={(e) => setFormData({ ...formData, lon: e.target.value })}
+              onChange={(e) => handleCoordinateChange('lon', e.target.value, -180, 180)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>

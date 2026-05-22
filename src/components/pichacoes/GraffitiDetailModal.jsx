@@ -14,9 +14,59 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
     neighborhood: '',
     city: '',
     state: '',
-    lat: 0,
-    lon: 0
+    lat: '',
+    lon: ''
   });
+
+  const COORDINATE_PATTERN = /^-?\d*(?:[.,]\d*)?$/;
+
+  const toInputValue = (value) => {
+    if (value === null || value === undefined) {
+      return '';
+    }
+
+    return String(value);
+  };
+
+  const isCoordinateValueAllowed = (value, min, max) => {
+    if (value === '' || value === '-' || value === '.' || value === '-.' || value === ',') {
+      return true;
+    }
+
+    if (!COORDINATE_PATTERN.test(value)) {
+      return false;
+    }
+
+    const numericValue = Number(value.replace(',', '.'));
+    if (Number.isNaN(numericValue)) {
+      return false;
+    }
+
+    return numericValue >= min && numericValue <= max;
+  };
+
+  const handleCoordinateChange = (key, value, min, max) => {
+    if (isCoordinateValueAllowed(value, min, max)) {
+      setFormData((prev) => ({ ...prev, [key]: value }));
+    }
+  };
+
+  const parseCoordinateValue = (value, min, max) => {
+    if (value === '' || value === '-' || value === '.' || value === '-.' || value === ',') {
+      return null;
+    }
+
+    const numericValue = Number(String(value).replace(',', '.'));
+    if (Number.isNaN(numericValue)) {
+      return null;
+    }
+
+    if (numericValue < min || numericValue > max) {
+      return null;
+    }
+
+    return numericValue;
+  };
 
   useEffect(() => {
     if (graffiti && isOpen) {
@@ -28,8 +78,8 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
         neighborhood: graffiti.location?.neighborhood || '',
         city: graffiti.location?.city || '',
         state: graffiti.location?.state || '',
-        lat: graffiti.location?.lat || 0,
-        lon: graffiti.location?.lon || 0
+        lat: toInputValue(graffiti.location?.lat),
+        lon: toInputValue(graffiti.location?.lon)
       });
       setIsEditing(false);
       loadGangs();
@@ -46,7 +96,14 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
   };
 
   const handleSave = () => {
-    onUpdate(formData);
+    const latValue = parseCoordinateValue(formData.lat, -90, 90);
+    const lonValue = parseCoordinateValue(formData.lon, -180, 180);
+
+    onUpdate({
+      ...formData,
+      lat: latValue ?? graffiti.location?.lat ?? 0,
+      lon: lonValue ?? graffiti.location?.lon ?? 0
+    });
     setIsEditing(false);
   };
 
@@ -232,10 +289,10 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Latitude</label>
                 {isEditing ? (
                   <input
-                    type="number"
-                    step="0.000001"
+                    type="text"
+                    inputMode="decimal"
                     value={formData.lat}
-                    onChange={(e) => setFormData({ ...formData, lat: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => handleCoordinateChange('lat', e.target.value, -90, 90)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Ex: -27.5954"
                   />
@@ -249,10 +306,10 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Longitude</label>
                 {isEditing ? (
                   <input
-                    type="number"
-                    step="0.000001"
+                    type="text"
+                    inputMode="decimal"
                     value={formData.lon}
-                    onChange={(e) => setFormData({ ...formData, lon: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => handleCoordinateChange('lon', e.target.value, -180, 180)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Ex: -48.5480"
                   />

@@ -36,7 +36,7 @@ export function Sidebar() {
         <button
           type="button"
           onClick={() => setIsCollapsed((prev) => !prev)}
-          className="p-2 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors"
+          className="p-2 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors cursor-pointer"
           aria-label={isCollapsed ? 'Expandir sidebar' : 'Recuar sidebar'}
           title={isCollapsed ? 'Expandir' : 'Recuar'}
         >
