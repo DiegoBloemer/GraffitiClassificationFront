@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, Trash2, MapPin, AlertTriangle, Filter, X } from 'lucide-react';
 import { graffitiService } from '../../services/graffitiService';
+import { API_BASE_URL } from '../../services/api';
 import { useToast } from '../../hooks/useToast';
 import { GraffitiFormModal } from './GraffitiFormModal';
 import { GraffitiDetailModal } from './GraffitiDetailModal';
@@ -20,18 +21,18 @@ export function GraffitisPage() {
   const [filterLocation, setFilterLocation] = useState('');
   const toast = useToast();
 
-  useEffect(() => {
-    loadGraffitis();
-  }, []);
-
-  const loadGraffitis = async () => {
+  const loadGraffitis = useCallback(async () => {
     try {
       const data = await graffitiService.getAll();
       setGraffitis(data);
     } catch (error) {
       toast.error('Erro ao carregar pichações');
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    loadGraffitis();
+  }, [loadGraffitis]);
 
   const handleCreate = async (formData) => {
     try {
@@ -227,7 +228,7 @@ export function GraffitisPage() {
             >
               {graffiti.imagePath ? (
                 <img
-                  src={`http://localhost:5219${graffiti.imagePath}`}
+                  src={`${API_BASE_URL}${graffiti.imagePath}`}
                   alt="Pichação"
                   className="w-full h-full object-cover"
                 />

@@ -35,6 +35,8 @@ export function GraffitiFormModal({ isOpen, onClose, onSave }) {
         image: null
       });
       setPreview(null);
+    } else {
+      setPreview((prev) => { if (prev) URL.revokeObjectURL(prev); return null; });
     }
   }, [isOpen]);
 
@@ -50,6 +52,7 @@ export function GraffitiFormModal({ isOpen, onClose, onSave }) {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (preview) URL.revokeObjectURL(preview);
       setFormData({ ...formData, image: file });
       setPreview(URL.createObjectURL(file));
     }

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Modal } from '../ui/Modal';
 import { MapPin, Calendar, AlertTriangle, Users, Save, Pencil } from 'lucide-react';
 import { gangService } from '../../services/gangService';
+import { API_BASE_URL } from '../../services/api';
 
 export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -59,7 +60,7 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
         {graffiti.imagePath && (
           <div className="w-full h-64 bg-gray-100 rounded-lg overflow-hidden shrink-0">
             <img
-              src={`http://localhost:5219${graffiti.imagePath}`}
+              src={`${API_BASE_URL}${graffiti.imagePath}`}
               alt="Pichação"
               className="w-full h-full object-contain"
             />

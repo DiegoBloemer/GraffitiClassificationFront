@@ -1,4 +1,6 @@
-const API_URL = 'http://localhost:5219/api/gangs';
+import { API_BASE_URL } from './api';
+
+const API_URL = `${API_BASE_URL}/api/gangs`;
 
 export const gangService = {
   async getAll() {
