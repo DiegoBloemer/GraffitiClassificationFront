@@ -26,6 +26,7 @@ export function GangFormModal({ isOpen, onClose, onSave, gang }) {
           <input
             type="text"
             required
+            maxLength={100}
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -36,6 +37,7 @@ export function GangFormModal({ isOpen, onClose, onSave, gang }) {
           <input
             type="text"
             required
+            maxLength={10}
             value={formData.acronym}
             onChange={(e) => setFormData({ ...formData, acronym: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -45,6 +47,7 @@ export function GangFormModal({ isOpen, onClose, onSave, gang }) {
           <label className="block text-sm font-medium text-gray-700 mb-1">Origem</label>
           <input
             type="text"
+            maxLength={2}
             value={formData.origin}
             onChange={(e) => setFormData({ ...formData, origin: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"

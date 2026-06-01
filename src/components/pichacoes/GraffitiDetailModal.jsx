@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Modal } from '../ui/Modal';
-import { MapPin, Calendar, AlertTriangle, Users, Save, Pencil } from 'lucide-react';
+import { MapPin, Trash2, Calendar, AlertTriangle, Users, Save, Pencil, Upload } from 'lucide-react';
 import { gangService } from '../../services/gangService';
 
 export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
@@ -9,17 +9,116 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
   const [formData, setFormData] = useState({
     visualDescription: '',
     threatLevel: '',
-    gangId: ''
+    gangId: '',
+    street: '',
+    neighborhood: '',
+    city: '',
+    state: '',
+    lat: '',
+    lon: ''
   });
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const imageInputRef = useRef(null);
+
+  const COORDINATE_PATTERN = /^-?\d*(?:[.,]\d*)?$/;
+
+  const toInputValue = (value) => {
+    if (value === null || value === undefined) {
+      return '';
+    }
+
+    return String(value);
+  };
+
+  const isCoordinateValueAllowed = (value, min, max) => {
+    if (value === '' || value === '-' || value === '.' || value === '-.' || value === ',') {
+      return true;
+    }
+
+    if (!COORDINATE_PATTERN.test(value)) {
+      return false;
+    }
+
+    const numericValue = Number(value.replace(',', '.'));
+    if (Number.isNaN(numericValue)) {
+      return false;
+    }
+
+    return numericValue >= min && numericValue <= max;
+  };
+
+  const handleCoordinateChange = (key, value, min, max) => {
+    if (isCoordinateValueAllowed(value, min, max)) {
+      setFormData((prev) => ({ ...prev, [key]: value }));
+    }
+  };
+
+  const parseCoordinateValue = (value, min, max) => {
+    if (value === '' || value === '-' || value === '.' || value === '-.' || value === ',') {
+      return null;
+    }
+
+    const numericValue = Number(String(value).replace(',', '.'));
+    if (Number.isNaN(numericValue)) {
+      return null;
+    }
+
+    if (numericValue < min || numericValue > max) {
+      return null;
+    }
+
+    return numericValue;
+  };
+
+  const toInvariantNumberString = (value) => {
+    if (value === null || value === undefined || value === '') {
+      return '';
+    }
+
+    return String(value).replace(',', '.');
+  };
+
+  const clearSelectedImage = () => {
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    setImagePreview(null);
+    setImageFile(null);
+    if (imageInputRef.current) {
+      imageInputRef.current.value = '';
+    }
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) {
+      return;
+    }
+
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
 
   useEffect(() => {
     if (graffiti && isOpen) {
       setFormData({
         visualDescription: graffiti.visualDescription,
         threatLevel: graffiti.threatLevel,
-        gangId: graffiti.gangId
+        gangId: graffiti.gangId,
+        street: graffiti.location?.street || '',
+        neighborhood: graffiti.location?.neighborhood || '',
+        city: graffiti.location?.city || '',
+        state: graffiti.location?.state || '',
+        lat: toInputValue(graffiti.location?.lat),
+        lon: toInputValue(graffiti.location?.lon)
       });
       setIsEditing(false);
+      clearSelectedImage();
       loadGangs();
     }
   }, [graffiti, isOpen]);
@@ -34,7 +133,29 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
   };
 
   const handleSave = () => {
-    onUpdate(formData);
+    const latValue = parseCoordinateValue(formData.lat, -90, 90);
+    const lonValue = parseCoordinateValue(formData.lon, -180, 180);
+
+    if (latValue === null || lonValue === null) {
+      return;
+    }
+
+    const data = new FormData();
+    data.append('id', String(graffiti.id));
+    data.append('visualDescription', formData.visualDescription);
+    data.append('threatLevel', formData.threatLevel);
+    data.append('gangId', String(formData.gangId));
+    data.append('street', formData.street);
+    data.append('neighborhood', formData.neighborhood);
+    data.append('city', formData.city);
+    data.append('state', formData.state);
+    data.append('lat', toInvariantNumberString(formData.lat));
+    data.append('lon', toInvariantNumberString(formData.lon));
+    if (imageFile) {
+      data.append('image', imageFile);
+    }
+
+    onUpdate(data);
     setIsEditing(false);
   };
 
@@ -52,17 +173,49 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
     High: 'Alto'
   };
 
+  const displayImage = imagePreview || graffiti.imagePath;
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Detalhes da Pichação" size="md">
       {/* Conteúdo com rolagem */}
       <div className="flex flex-col gap-6">
-        {graffiti.imagePath && (
+        {displayImage ? (
           <div className="w-full h-64 bg-gray-100 rounded-lg overflow-hidden shrink-0">
             <img
-              src={`http://localhost:5219${graffiti.imagePath}`}
+              src={displayImage}
               alt="Pichação"
               className="w-full h-full object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                console.error('Erro ao carregar imagem do MinIO:', displayImage);
+              }}
             />
+          </div>
+        ) : (
+          <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+            Sem imagem
+          </div>
+        )}
+
+        {isEditing && (
+          <div className="flex flex-col gap-2">
+            <label className="block text-sm font-medium text-gray-700">Imagem</label>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                <Upload className="w-4 h-4" />
+                Selecionar nova imagem
+                <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+              </label>
+              {imagePreview && (
+                <button
+                  type="button"
+                  onClick={clearSelectedImage}
+                  className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors shrink-0 cursor-pointer"
+                >
+                <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -142,23 +295,106 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
                 </h3>
               </div>
 
+              {/* Rua */}
               <div className="col-span-2">
-                <p className="text-gray-900">
-                  {graffiti.location.street}, {graffiti.location.neighborhood}
-                </p>
-                <p className="text-gray-600 text-sm">
-                  {graffiti.location.city} - {graffiti.location.state}
-                </p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Rua</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    maxLength={150}
+                    value={formData.street}
+                    onChange={(e) => setFormData({ ...formData, street: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ex: Rua das Flores, 123"
+                  />
+                ) : (
+                  <p className="text-gray-900">{graffiti.location.street}</p>
+                )}
               </div>
 
+              {/* Bairro */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    maxLength={100}
+                    value={formData.neighborhood}
+                    onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ex: Centro"
+                  />
+                ) : (
+                  <p className="text-gray-900">{graffiti.location.neighborhood}</p>
+                )}
+              </div>
+
+              {/* Cidade */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    maxLength={100}
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ex: Florianópolis"
+                  />
+                ) : (
+                  <p className="text-gray-900">{graffiti.location.city}</p>
+                )}
+              </div>
+
+              {/* Estado */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={formData.state}
+                    onChange={(e) => setFormData({ ...formData, state: e.target.value.toUpperCase() })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ex: SC"
+                    maxLength={2}
+                  />
+                ) : (
+                  <p className="text-gray-900">{graffiti.location.state}</p>
+                )}
+              </div>
+
+              {/* Latitude */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Latitude</label>
-                <p className="text-gray-900">{graffiti.location.lat}</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={formData.lat}
+                    onChange={(e) => handleCoordinateChange('lat', e.target.value, -90, 90)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ex: -27.5954"
+                  />
+                ) : (
+                  <p className="text-gray-900">{graffiti.location.lat}</p>
+                )}
               </div>
 
+              {/* Longitude */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Longitude</label>
-                <p className="text-gray-900">{graffiti.location.lon}</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={formData.lon}
+                    onChange={(e) => handleCoordinateChange('lon', e.target.value, -180, 180)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ex: -48.5480"
+                  />
+                ) : (
+                  <p className="text-gray-900">{graffiti.location.lon}</p>
+                )}
               </div>
             </>
           )}
@@ -169,7 +405,10 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
           {isEditing ? (
             <>
               <button
-                onClick={() => setIsEditing(false)}
+                onClick={() => {
+                  setIsEditing(false);
+                  clearSelectedImage();
+                }}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
               >
                 Cancelar

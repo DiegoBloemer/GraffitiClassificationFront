@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, Trash2, MapPin, AlertTriangle, Filter, X } from 'lucide-react';
 import { graffitiService } from '../../services/graffitiService';
 import { useToast } from '../../hooks/useToast';
@@ -20,18 +20,18 @@ export function GraffitisPage() {
   const [filterLocation, setFilterLocation] = useState('');
   const toast = useToast();
 
-  useEffect(() => {
-    loadGraffitis();
-  }, []);
-
-  const loadGraffitis = async () => {
+  const loadGraffitis = useCallback(async () => {
     try {
       const data = await graffitiService.getAll();
       setGraffitis(data);
     } catch (error) {
       toast.error('Erro ao carregar pichações');
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    loadGraffitis();
+  }, [loadGraffitis]);
 
   const handleCreate = async (formData) => {
     try {
@@ -46,10 +46,7 @@ export function GraffitisPage() {
 
   const handleUpdate = async (formData) => {
     try {
-      await graffitiService.update(selectedGraffiti.id, {
-        ...formData,
-        registeredAt: selectedGraffiti.registeredAt
-      });
+      await graffitiService.update(selectedGraffiti.id, formData);
       toast.success('Pichação atualizada com sucesso!');
       setIsDetailOpen(false);
       setSelectedGraffiti(null);
@@ -227,9 +224,13 @@ export function GraffitisPage() {
             >
               {graffiti.imagePath ? (
                 <img
-                  src={`http://localhost:5219${graffiti.imagePath}`}
+                  src={graffiti.imagePath}
                   alt="Pichação"
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    console.error('Erro ao carregar imagem do MinIO:', graffiti.imagePath);
+                  }}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-400">
