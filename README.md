@@ -8,6 +8,8 @@ Sistema de classificação e registro de pichações relacionadas a facções cr
 - **React Router DOM** - Roteamento SPA
 - **Tailwind CSS v4** - Estilização utility-first
 - **Lucide React** - Biblioteca de ícones
+- **Recharts** - Gráficos analíticos (pizza, barras e empilhado)
+- **React Simple Maps + D3 Scale** - Visualizações geográficas (mapa de calor em desenvolvimento)
 - **Context API** - Gerenciamento de estado global
 
 ## 📁 Estrutura do Projeto
@@ -15,34 +17,45 @@ Sistema de classificação e registro de pichações relacionadas a facções cr
 ```
 src/
 ├── components/
+│   ├── dashboard/
+│   │   └── DashboardPage.jsx        # Página analítica do dashboard
 │   ├── layout/
-│   │   ├── Layout.jsx          # Layout principal com sidebar
-│   │   └── Sidebar.jsx         # Menu de navegação lateral
+│   │   ├── Layout.jsx               # Layout principal com sidebar
+│   │   └── Sidebar.jsx              # Menu de navegação lateral
 │   ├── ui/
-│   │   ├── Modal.jsx           # Modal genérico reutilizável
-│   │   ├── ConfirmDialog.jsx   # Modal de confirmação
-│   │   ├── Toast.jsx           # Componente de notificação
-│   │   └── ToastContainer.jsx  # Container de toasts
+│   │   ├── Modal.jsx                # Modal genérico reutilizável
+│   │   ├── ConfirmDialog.jsx        # Modal de confirmação
+│   │   ├── Toast.jsx                # Componente de notificação
+│   │   └── ToastContainer.jsx       # Container de toasts
 │   ├── faccoes/
-│   │   ├── GangsPage.jsx       # Página de gestão de facções
-│   │   └── GangFormModal.jsx   # Modal de formulário de facção
+│   │   ├── GangsPage.jsx            # Página de gestão de facções
+│   │   └── GangFormModal.jsx        # Modal de formulário de facção
 │   └── pichacoes/
 │       ├── GraffitisPage.jsx        # Página de listagem de pichações
 │       ├── GraffitiFormModal.jsx    # Modal de cadastro de pichação
 │       └── GraffitiDetailModal.jsx  # Modal de detalhes e edição
 ├── contexts/
-│   └── ToastContext.jsx        # Context para sistema de notificações
+│   └── ToastContext.jsx             # Context para sistema de notificações
 ├── hooks/
-│   └── useToast.js             # Custom hook para toasts
+│   └── useToast.js                  # Custom hook para toasts
 ├── services/
-│   ├── gangService.js          # Serviço de API para facções
-│   └── graffitiService.js      # Serviço de API para pichações
-├── App.jsx                     # Definição de rotas
-├── main.jsx                    # Ponto de entrada
-└── index.css                   # Estilos globais e animações
+│   ├── api.js                      # Configuração central da URL da API
+│   ├── dashboardService.js         # Serviço de API do dashboard
+│   ├── gangService.js              # Serviço de API para facções
+│   └── graffitiService.js          # Serviço de API para pichações
+├── App.jsx                         # Definição de rotas
+├── main.jsx                        # Ponto de entrada
+└── index.css                       # Estilos globais e animações
 ```
 
 ## 🎯 Funcionalidades
+
+### Dashboard Analítico (/dashboard)
+- ✅ Cards de resumo (pichações, facções, nível predominante)
+- ✅ Gráfico de pizza por facção
+- ✅ Gráfico de barras por estado
+- ✅ Gráfico de barras empilhadas por estado e facção
+- ✅ Mapa de calor em desenvolvimento (placeholder informativo)
 
 ### Gestão de Facções (/faccoes)
 - ✅ Listagem de facções cadastradas
@@ -107,8 +120,15 @@ http://localhost:5173
 - Área de conteúdo responsiva
 - Ícones do Lucide em todos os botões
 
+### Dashboard Analítico
+- Visualizações responsivas com Recharts
+- Estados de carregamento e vazio padronizados
+- Paleta consistente para facções e níveis de ameaça
+
 ### Comunicação com API
-- Serviços centralizados (`gangService`, `graffitiService`)
+- Serviços centralizados (`gangService`, `graffitiService`, `dashboardService`)
+- Base URL centralizada em [GraffitiClassificationFront/src/services/api.js](GraffitiClassificationFront/src/services/api.js) com suporte a `VITE_API_URL`
+- Tratamento de erros com mensagens retornadas pela API
 - Tratamento de erros consistente
 - Upload de arquivos via FormData
 - Feedback visual via toasts
@@ -131,17 +151,23 @@ http://localhost:5173
 - `PUT /api/graffitis/{id}` - Atualizar
 - `DELETE /api/graffitis/{id}` - Excluir
 
+**Dashboard**
+- `GET /api/Dashboard/summary` - Resumo geral
+- `GET /api/Dashboard/graffitis-by-gang` - Pichações por facção
+- `GET /api/Dashboard/graffitis-by-state` - Pichações por estado
+- `GET /api/Dashboard/graffitis-by-gang-and-state` - Pichações por estado e facção
+
 ### Configuração da URL da API
 
 Para alterar a URL base da API, edite os arquivos:
-- `src/services/gangService.js`
-- `src/services/graffitiService.js`
 
-Altere a constante `API_URL` conforme necessário.
+- [GraffitiClassificationFront/src/services/api.js](GraffitiClassificationFront/src/services/api.js)
+
+Ou defina a variável de ambiente `VITE_API_URL` conforme necessário.
 
 ## 📝 Notas Importantes
 
-1. **Imagens**: O backend salva imagens em `wwwroot/images/occurrences/` e retorna o caminho relativo. O frontend constrói a URL completa concatenando com `http://localhost:5219`.
+1. **Imagens**: O backend retorna o caminho relativo da imagem. O frontend constrói a URL completa usando `API_BASE_URL`.
 
 2. **CORS**: O backend deve ter CORS habilitado para permitir requisições do frontend.
 

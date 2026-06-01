@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Modal } from '../ui/Modal';
-import { MapPin, Calendar, AlertTriangle, Users, Save, Pencil } from 'lucide-react';
+import { MapPin, Trash2, Calendar, AlertTriangle, Users, Save, Pencil, Upload } from 'lucide-react';
 import { gangService } from '../../services/gangService';
 
 export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
@@ -17,6 +17,9 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
     lat: '',
     lon: ''
   });
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const imageInputRef = useRef(null);
 
   const COORDINATE_PATTERN = /^-?\d*(?:[.,]\d*)?$/;
 
@@ -68,6 +71,39 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
     return numericValue;
   };
 
+  const toInvariantNumberString = (value) => {
+    if (value === null || value === undefined || value === '') {
+      return '';
+    }
+
+    return String(value).replace(',', '.');
+  };
+
+  const clearSelectedImage = () => {
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    setImagePreview(null);
+    setImageFile(null);
+    if (imageInputRef.current) {
+      imageInputRef.current.value = '';
+    }
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) {
+      return;
+    }
+
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
   useEffect(() => {
     if (graffiti && isOpen) {
       setFormData({
@@ -82,6 +118,7 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
         lon: toInputValue(graffiti.location?.lon)
       });
       setIsEditing(false);
+      clearSelectedImage();
       loadGangs();
     }
   }, [graffiti, isOpen]);
@@ -99,11 +136,26 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
     const latValue = parseCoordinateValue(formData.lat, -90, 90);
     const lonValue = parseCoordinateValue(formData.lon, -180, 180);
 
-    onUpdate({
-      ...formData,
-      lat: latValue ?? graffiti.location?.lat ?? 0,
-      lon: lonValue ?? graffiti.location?.lon ?? 0
-    });
+    if (latValue === null || lonValue === null) {
+      return;
+    }
+
+    const data = new FormData();
+    data.append('id', String(graffiti.id));
+    data.append('visualDescription', formData.visualDescription);
+    data.append('threatLevel', formData.threatLevel);
+    data.append('gangId', String(formData.gangId));
+    data.append('street', formData.street);
+    data.append('neighborhood', formData.neighborhood);
+    data.append('city', formData.city);
+    data.append('state', formData.state);
+    data.append('lat', toInvariantNumberString(formData.lat));
+    data.append('lon', toInvariantNumberString(formData.lon));
+    if (imageFile) {
+      data.append('image', imageFile);
+    }
+
+    onUpdate(data);
     setIsEditing(false);
   };
 
@@ -121,25 +173,49 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
     High: 'Alto'
   };
 
+  const displayImage = imagePreview || graffiti.imagePath;
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Detalhes da Pichação" size="md">
       {/* Conteúdo com rolagem */}
       <div className="flex flex-col gap-6">
-        {graffiti.imagePath ? (
+        {displayImage ? (
           <div className="w-full h-64 bg-gray-100 rounded-lg overflow-hidden shrink-0">
             <img
-              src={graffiti.imagePath}
+              src={displayImage}
               alt="Pichação"
               className="w-full h-full object-contain"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
-                console.error('Erro ao carregar imagem do MinIO:', graffiti.imagePath);
+                console.error('Erro ao carregar imagem do MinIO:', displayImage);
               }}
             />
           </div>
         ) : (
           <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
             Sem imagem
+          </div>
+        )}
+
+        {isEditing && (
+          <div className="flex flex-col gap-2">
+            <label className="block text-sm font-medium text-gray-700">Imagem</label>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                <Upload className="w-4 h-4" />
+                Selecionar nova imagem
+                <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+              </label>
+              {imagePreview && (
+                <button
+                  type="button"
+                  onClick={clearSelectedImage}
+                  className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors shrink-0 cursor-pointer"
+                >
+                <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -225,6 +301,7 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
                 {isEditing ? (
                   <input
                     type="text"
+                    maxLength={150}
                     value={formData.street}
                     onChange={(e) => setFormData({ ...formData, street: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -241,6 +318,7 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
                 {isEditing ? (
                   <input
                     type="text"
+                    maxLength={100}
                     value={formData.neighborhood}
                     onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -257,6 +335,7 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
                 {isEditing ? (
                   <input
                     type="text"
+                    maxLength={100}
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -326,7 +405,10 @@ export function GraffitiDetailModal({ isOpen, onClose, graffiti, onUpdate }) {
           {isEditing ? (
             <>
               <button
-                onClick={() => setIsEditing(false)}
+                onClick={() => {
+                  setIsEditing(false);
+                  clearSelectedImage();
+                }}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
               >
                 Cancelar

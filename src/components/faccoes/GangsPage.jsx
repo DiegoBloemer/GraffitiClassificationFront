@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Plus, Pencil, Trash2, Search } from 'lucide-react';
 import { gangService } from '../../services/gangService';
 import { useToast } from '../../hooks/useToast';
@@ -7,7 +7,6 @@ import { ConfirmDialog } from '../ui/ConfirmDialog';
 
 export function GangsPage() {
   const [gangs, setGangs] = useState([]);
-  const [filteredGangs, setFilteredGangs] = useState([]);
   const [search, setSearch] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -18,13 +17,12 @@ export function GangsPage() {
     loadGangs();
   }, []);
 
-  useEffect(() => {
-    const filtered = gangs.filter(g =>
+  const filteredGangs = useMemo(() =>
+      gangs.filter(g =>
       g.name.toLowerCase().includes(search.toLowerCase()) ||
       g.acronym.toLowerCase().includes(search.toLowerCase())
-    );
-    setFilteredGangs(filtered);
-  }, [search, gangs]);
+     ),
+  [gangs, search]);
 
   const loadGangs = async () => {
     try {
